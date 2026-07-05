@@ -9,13 +9,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, getDoc, orderBy, query, where, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     const firebaseConfig = {
-      apiKey: "AIzaSyBfJnqO4Mb1ow-8s27hqxj1olDiWEVVuR0",
-      authDomain: "calivraison-cd60b.firebaseapp.com",
-      projectId: "calivraison-cd60b",
-      storageBucket: "calivraison-cd60b.firebasestorage.app",
-      messagingSenderId: "236945542072",
-      appId: "1:236945542072:web:85d463eb87179d70e39d4d",
-      measurementId: "G-ZH27GCED20"
+      apiKey: "AIzaSyABw2pQJJ_dBT3pv0OXCdgAiZ2waPv1Xxs",
+      authDomain: "drcnbnorth59.firebaseapp.com",
+      projectId: "drcnbnorth59",
+      storageBucket: "drcnbnorth59.firebasestorage.app",
+      messagingSenderId: "132105415700",
+      appId: "1:132105415700:web:c7a8b5ab549a7c2eae8b01",
+      measurementId: "G-LY5WVWCGDX"
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -1308,7 +1308,7 @@ function finalizeOrder(){
   const modeBtn=document.querySelector('.questionnaire .option-btn.active');if(!modeBtn){alert('Veuillez choisir un mode de récupération.');return;}
   let modeLabel='';if(modeBtn.dataset.type==='pickup')modeLabel='Venir sur place';else modeLabel='Livraison';
   const senderName=tgUser?.username?'@'+tgUser.username:(tgUser?.first_name||'Utilisateur');
-  let message=`🥷 *NOUVELLE COMMANDE — Calivraison 33* 🥷\n\n👤 ${senderName}\n📅 ${new Date().toLocaleString('fr-FR')}\n\n🛍️ *Articles :*\n`;
+  let message=`⚡️ *NOUVELLE COMMANDE — DrCNBNorth 59* ⚡️\n\n👤 ${senderName}\n📅 ${new Date().toLocaleString('fr-FR')}\n\n🛍️ *Articles :*\n`;
   let total=0;let itemsText='';
   cart.forEach(item=>{total+=parseInt(item.price)||0;message+=`• ${item.title} — ${item.qty} (${item.price})\n`;itemsText+=`• ${item.title} ${item.qty} (${item.price})\n`;});
   message+=`\n💰 *Total : ${total} €*\n\n📦 *Mode :* ${modeLabel}\n`;
@@ -1317,7 +1317,7 @@ function finalizeOrder(){
   if(rouletteWonPrize){message+=`\n\n🎡 *Lot gagné à la roulette :* ${rouletteWonPrize.icon||'🎁'} ${rouletteWonPrize.name||''}`;}
   message+=`\n\nMerci ! 🙏`;
   commandes.push({tgName:tgUser?.first_name||'Invité',items:itemsText.trim(),total,mode:modeLabel,date:new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),prize:rouletteWonPrize?rouletteWonPrize.name:null});saveCommandes();
-  const url=`https://t.me/@Contactarca?text=${encodeURIComponent(message)}`;if(tg)tg.openTelegramLink(url);else window.open(url,'_blank');
+  const url=`https://t.me/@DrCNBNorth59?text=${encodeURIComponent(message)}`;if(tg)tg.openTelegramLink(url);else window.open(url,'_blank');
   rouletteWonPrize=null;
 }
 
@@ -1330,7 +1330,7 @@ function renderProfilPage(){
 
 document.querySelectorAll('.reseau-item[data-link]').forEach(el=>{el.onclick=()=>{const l=el.getAttribute('data-link');if(tg)tg.openLink(l);else window.open(l,'_blank');};});
 
-const ADMIN_PIN = '0285';
+const ADMIN_PIN = '0259';
 let adminTapCount=0;let adminTapTimer=null;
 document.getElementById('admin-trigger').addEventListener('click',()=>{adminTapCount++;clearTimeout(adminTapTimer);adminTapTimer=setTimeout(()=>{adminTapCount=0;},1200);if(adminTapCount>=5){adminTapCount=0;openAdminLogin();}});
 
