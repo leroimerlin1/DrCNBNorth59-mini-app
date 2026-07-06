@@ -988,6 +988,16 @@ function filterProducts(){
 }
 window.filterProducts=filterProducts;
 
+// Génère l'URL d'une miniature JPG à partir d'une vidéo Cloudinary
+// (Cloudinary extrait automatiquement une frame quand on demande l'extension .jpg
+// sur une URL de type /video/upload/.../fichier.mp4)
+function getVideoThumbUrl(videoUrl){
+  if(!videoUrl) return null;
+  try{
+    return videoUrl.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
+  }catch(e){ return null; }
+}
+
 function renderProducts(list){
   if(!list)list=Object.values(products);
   const grid=document.getElementById('products-grid');grid.innerHTML='';
@@ -999,9 +1009,13 @@ function renderProducts(list){
     const card=document.createElement('div');card.className='card';
     let mediaHTML;
     if(p.video){
-      mediaHTML=`<video src="${p.video}" muted autoplay loop playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;"></video>`;
+      // On affiche une IMAGE (miniature de la vidéo) sur la page d'accueil au lieu
+      // de la vidéo elle-même, pour éviter de charger plusieurs vidéos en simultané
+      // (ce qui faisait bugger/freezer la mini app).
+      const thumb=getVideoThumbUrl(p.video);
+      mediaHTML=`<img class="card-img" src="${thumb}" alt="${p.title}" loading="lazy" onerror="this.onerror=null;this.src='${p.video}';">`;
     } else if(p.image){
-      mediaHTML=`<img class="card-img" src="${p.image}" alt="${p.title}" onerror="this.style.display='none'">`;
+      mediaHTML=`<img class="card-img" src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.style.display='none'">`;
     } else {
       mediaHTML=`<div class="card-no-video">🎬</div>`;
     }
