@@ -592,12 +592,13 @@ textarea{min-height:80px;resize:vertical;}
         <input class="admin-input" id="af-farm" placeholder="ex: BNF 🏴‍☠️">
       </div>
       <div class="admin-field">
-        <label class="admin-label">Vidéo du produit (fichier local)</label>
+        <label class="admin-label">Vidéo du produit</label>
         <div id="af-video-preview-wrap" style="margin-bottom:10px;display:none;">
           <video id="af-video-preview" src="" controls playsinline style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid rgba(62,201,58,0.15);display:block;background:#000;"></video>
         </div>
-        <input type="text" id="af-video" class="admin-input" placeholder="ex: videos/produit1.mp4">
-        <div style="font-size:0.76rem;color:var(--cream-dim);margin-top:6px;">Place le fichier vidéo dans un dossier "videos" à côté du fichier HTML, puis indique ici son chemin relatif (ex: videos/produit1.mp4).</div>
+        <input type="file" accept="video/*" id="af-video-file" class="admin-input" style="padding:9px;">
+        <div id="af-video-upload-status" style="font-size:0.78rem;color:var(--cream-dim);margin-top:6px;min-height:14px;"></div>
+        <input type="hidden" id="af-video">
       </div>
       <div class="admin-field">
         <label class="admin-label">Image du produit</label>
@@ -645,7 +646,7 @@ textarea{min-height:80px;resize:vertical;}
     <div id="home-page">
       <div id="home-hero">
         <div class="hero-logo-ring" id="admin-trigger">
-          <img src="dino.jpg" alt="DrCNBNorth 59" onerror="this.parentElement.style.background='#0d2a20'">
+          <img src="dino.jpg" alt="Haribio 64" onerror="this.parentElement.style.background='#0d2a20'">
         </div>
         <div class="hero-brand">DrCNBNorth 59</div>
         <div class="hero-tagline">⚡️ PREMIUM TERPS SHOP ⚡️</div>
@@ -794,9 +795,7 @@ if (tg) {
   tgUser = tg.initDataUnsafe?.user || null;
 }
 
-// --- CLOUDINARY (upload d'IMAGES uniquement depuis le panel admin) ---
-// Les vidéos ne passent plus par Cloudinary : elles sont stockées en local,
-// à côté du fichier HTML (voir champ "Vidéo du produit" dans le formulaire admin).
+// --- CLOUDINARY (upload d'images ET vidéos depuis le panel admin) ---
 // 👉 Remplace ces deux valeurs par celles de TON compte Cloudinary :
 // 1. Crée un compte gratuit sur https://cloudinary.com
 // 2. Dans Dashboard, note ton "Cloud name"
@@ -811,6 +810,22 @@ async function uploadImageToCloudinary(file){
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  if(!res.ok){
+    const errText = await res.text();
+    throw new Error('Upload échoué: ' + errText);
+  }
+  const data = await res.json();
+  return data.secure_url;
+}
+
+async function uploadVideoToCloudinary(file){
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
     method: 'POST',
     body: formData
   });
@@ -860,11 +875,16 @@ async function fsDeleteProduct(key){
 
 // --- RÉSEAUX : liste de liens éditable depuis l'admin ---
 let reseauxItems = {};
+let reseauxSeeded = false;
 async function fsSaveReseau(key, data){
   await window._fsSet(window._fsDoc(window._db, 'reseaux', key), data);
 }
 async function fsDeleteReseau(key){
   await window._fsDel(window._fsDoc(window._db, 'reseaux', key));
+}
+async function seedReseauxIfEmpty(snap){
+  // Seed désactivé
+  return;
 }
 window.initReseauxRealtime = function(){
   try{
@@ -875,17 +895,29 @@ window.initReseauxRealtime = function(){
       reseauxItems = result;
       renderReseauxPage();
       if(document.getElementById('admin-overlay').classList.contains('open')) renderAdminReseauxList();
+      seedReseauxIfEmpty(snap);
     }, (err) => { console.error('Erreur de synchronisation réseaux Firestore', err); });
   }catch(e){ console.error('initReseauxRealtime error', e); }
 };
 
 // --- INFOS : cartes éditables depuis l'admin ---
 let infoCards = {};
+let infoCardsSeeded = false;
 async function fsSaveInfoCard(key, data){
   await window._fsSet(window._fsDoc(window._db, 'infocards', key), data);
 }
 async function fsDeleteInfoCard(key){
   await window._fsDel(window._fsDoc(window._db, 'infocards', key));
+}
+async function seedInfoCardsIfEmpty(snap){
+  if(!snap.empty || infoCardsSeeded) return;
+  infoCardsSeeded = true;
+  const defaults = [
+    {icon:'✅', title:'Commander sur place', badge:'🕐 13h / 00h 🕛', lines:'💨 Service Rapide\n🔐 Adresse discrète et sécurisée', order:1},
+    {icon:'🚚', title:'Système livraison', badge:'🕑 14h / 22h 🕙', lines:"⚠️ 50€ de commande minimum\n🙌 Plusieurs tournées dans la journée\n⏳ Temps d'attente minimum", order:2},
+    {icon:'📲', title:'Contact direct', linkName:'@HaribioContact', linkSub:'Nous contacter sur Telegram 📩', linkUrl:'https://t.me/HaribioContact', linkIcon:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/512px-Telegram_logo.svg.png', order:3}
+  ];
+  for(const d of defaults){ try{ await fsSaveInfoCard('seed_'+d.order+'_'+Date.now(), d); }catch(e){console.error(e);} }
 }
 window.initInfoCardsRealtime = function(){
   try{
@@ -896,6 +928,7 @@ window.initInfoCardsRealtime = function(){
       infoCards = result;
       renderInfosPage();
       if(document.getElementById('admin-overlay').classList.contains('open')) renderAdminInfoCardsList();
+      seedInfoCardsIfEmpty(snap);
     }, (err) => { console.error('Erreur de synchronisation infos Firestore', err); });
   }catch(e){ console.error('initInfoCardsRealtime error', e); }
 };
@@ -955,6 +988,16 @@ function filterProducts(){
 }
 window.filterProducts=filterProducts;
 
+// Génère l'URL d'une miniature JPG à partir d'une vidéo Cloudinary
+// (Cloudinary extrait automatiquement une frame quand on demande l'extension .jpg
+// sur une URL de type /video/upload/.../fichier.mp4)
+function getVideoThumbUrl(videoUrl){
+  if(!videoUrl) return null;
+  try{
+    return videoUrl.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
+  }catch(e){ return null; }
+}
+
 function renderProducts(list){
   if(!list)list=Object.values(products);
   const grid=document.getElementById('products-grid');grid.innerHTML='';
@@ -966,9 +1009,11 @@ function renderProducts(list){
     const card=document.createElement('div');card.className='card';
     let mediaHTML;
     if(p.video){
-      // Vidéo locale (fichier stocké à côté du HTML) affichée directement en boucle,
-      // sans son, comme aperçu sur la page d'accueil.
-      mediaHTML=`<video src="${p.video}" muted loop autoplay playsinline preload="metadata"></video>`;
+      // On affiche une IMAGE (miniature de la vidéo) sur la page d'accueil au lieu
+      // de la vidéo elle-même, pour éviter de charger plusieurs vidéos en simultané
+      // (ce qui faisait bugger/freezer la mini app).
+      const thumb=getVideoThumbUrl(p.video);
+      mediaHTML=`<img class="card-img" src="${thumb}" alt="${p.title}" loading="lazy" onerror="this.onerror=null;this.src='${p.video}';">`;
     } else if(p.image){
       mediaHTML=`<img class="card-img" src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.style.display='none'">`;
     } else {
@@ -1508,6 +1553,8 @@ function openAdminForm(key){
   document.getElementById('admin-edit-key').value=key||'';
   document.getElementById('af-image-file').value='';
   document.getElementById('af-image-upload-status').textContent='';
+  document.getElementById('af-video-file').value='';
+  document.getElementById('af-video-upload-status').textContent='';
   if(key){
     document.getElementById('admin-form-title').textContent='✏️ Modifier le produit';
     const p=products[key];
@@ -1570,17 +1617,25 @@ document.getElementById('af-image-file').addEventListener('change', async (e)=>{
   }
 });
 
-// Champ vidéo local : quand l'admin tape/colle un chemin de fichier (ex: videos/produit1.mp4),
-// on met à jour l'aperçu vidéo directement, sans passer par un upload externe.
-document.getElementById('af-video').addEventListener('input', (e)=>{
-  const path = e.target.value.trim();
+document.getElementById('af-video-file').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const status = document.getElementById('af-video-upload-status');
   const preview = document.getElementById('af-video-preview');
   const previewWrap = document.getElementById('af-video-preview-wrap');
-  if(path){
-    preview.src = path;
+  status.textContent = '⏳ Upload de la vidéo en cours...';
+  status.style.color = 'var(--orange)';
+  try{
+    const url = await uploadVideoToCloudinary(file);
+    document.getElementById('af-video').value = url;
+    preview.src = url;
     previewWrap.style.display = 'block';
-  } else {
-    previewWrap.style.display = 'none';
+    status.textContent = '✅ Vidéo uploadée avec succès !';
+    status.style.color = 'var(--green-light)';
+  }catch(err){
+    console.error(err);
+    status.textContent = '❌ Erreur upload (vérifie ton cloud name / preset Cloudinary)';
+    status.style.color = '#ff4422';
   }
 });
 
