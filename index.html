@@ -1331,7 +1331,7 @@ function finalizeOrder(){
   if(rouletteWonPrize){message+=`\n\n🎡 *Lot gagné à la roulette :* ${rouletteWonPrize.icon||'🎁'} ${rouletteWonPrize.name||''}`;}
   message+=`\n\nMerci ! 🙏`;
   commandes.push({tgName:tgUser?.first_name||'Invité',items:itemsText.trim(),total,mode:modeLabel,date:new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),prize:rouletteWonPrize?rouletteWonPrize.name:null});saveCommandes();
-  const url=`https://t.me/@DrCNBNorth59?text=${encodeURIComponent(message)}`;if(tg)tg.openTelegramLink(url);else window.open(url,'_blank');
+  const url=`https://t.me/DrCNBNorth591?text=${encodeURIComponent(message)}`;if(tg)tg.openTelegramLink(url);else window.open(url,'_blank');
   rouletteWonPrize=null;
 }
 
